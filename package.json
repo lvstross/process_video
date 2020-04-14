@@ -1,0 +1,19 @@
+{
+  "name": "process_video",
+  "version": "1.0.0",
+  "description": "",
+  "main": "process_video.js",
+  "scripts": {
+    "download": "node ./url_download.js",
+    "genUpload": "node ./generateUploadFromClips.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {},
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "line-reader": "^0.4.0",
+    "ytdl-core": "^2.0.1"
+  }
+}
