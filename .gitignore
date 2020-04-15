@@ -2,3 +2,5 @@ node_modules
 clips/*
 downloads/*
 uploads/*
+splitClipStation/*
+*.DS_Store

@@ -1,2 +1,5 @@
-file ./clips/clip1.mp4
-file ./clips/clip2.mp4
+file ./clips/video_1-Scene-011.mp4
+file ./clips/video_1-Scene-002.mp4
+file ./clips/video_1-Scene-006.mp4
+file ./clips/video_1-Scene-007.mp4
+file ./clips/video_1-Scene-012.mp4

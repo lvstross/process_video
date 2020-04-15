@@ -5,7 +5,9 @@
   "main": "process_video.js",
   "scripts": {
     "download": "node ./url_download.js",
-    "genUpload": "node ./generateUploadFromClips.js"
+    "genUpload": "node ./generateUploadFromClips.js",
+    "splitVideo": "bash ./splitVideo.sh",
+    "splitRepair": "node ./splitRepair.js"
   },
   "keywords": [],
   "author": "",
