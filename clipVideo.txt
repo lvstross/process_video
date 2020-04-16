@@ -1,0 +1,8 @@
+ffmpeg -i video.mp4 -ss 01:00 -t 60 -c copy videoCut.mp4
+
+
+Notes:
+-i: input
+-ss: stream
+-t: time duration
+-c: codec
