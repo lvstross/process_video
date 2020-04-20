@@ -1,125 +1,91 @@
-var fs = require('fs');
-var readline = require('readline');
-var {google} = require('googleapis');
-var OAuth2 = google.auth.OAuth2;
+/**
+ * This script uploads a video (specifically `video.mp4` from the current
+ * directory) to YouTube,
+ *
+ * To run this script you have to create OAuth2 credentials and download them
+ * as JSON and replace the `credentials.json` file. Then install the
+ * dependencies:
+ *
+ * npm i r-json lien opn bug-killer
+ *
+ * Don't forget to run an `npm i` to install the `youtube-api` dependencies.
+ * */
+require('dotenv/config');
+const Youtube = require("youtube-api")
+    , fs = require("fs")
+    , readJson = require("r-json")
+    , Lien = require("lien")
+    , Logger = require("bug-killer")
+    , opn = require("opn")
+    , prettyBytes = require("pretty-bytes")
+    ;
 
-// If modifying these scopes, delete your previously saved credentials
-// at ~/.credentials/youtube-nodejs-quickstart.json
-var SCOPES = ['https://www.googleapis.com/auth/youtube.readonly'];
-var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
-    process.env.USERPROFILE) + '/.credentials/';
-var TOKEN_PATH = TOKEN_DIR + 'youtube-nodejs-quickstart.json';
+// I downloaded the file from OAuth2 -> Download JSON
+const CREDENTIALS = readJson(`./json/${process.env.YOUTUBE_CREDS}`);
 
-// Load client secrets from a local file.
-fs.readFile('client_secret.json', function processClientSecrets(err, content) {
-  if (err) {
-    console.log('Error loading client secret file: ' + err);
-    return;
-  }
-  // Authorize a client with the loaded credentials, then call the YouTube API.
-  authorize(JSON.parse(content), getChannel);
+// Init lien server
+let server = new Lien({
+    host: "localhost"
+  , port: 5000
 });
 
-/**
- * Create an OAuth2 client with the given credentials, and then execute the
- * given callback function.
- *
- * @param {Object} credentials The authorization client credentials.
- * @param {function} callback The callback to call with the authorized client.
- */
-function authorize(credentials, callback) {
-  var clientSecret = credentials.installed.client_secret;
-  var clientId = credentials.installed.client_id;
-  var redirectUrl = credentials.installed.redirect_uris[0];
-  var oauth2Client = new OAuth2(clientId, clientSecret, redirectUrl);
+// Authenticate
+// You can access the Youtube resources via OAuth2 only.
+// https://developers.google.com/youtube/v3/guides/moving_to_oauth#service_accounts
+let oauth = Youtube.authenticate({
+    type: "oauth"
+  , client_id: CREDENTIALS.web.client_id
+  , client_secret: CREDENTIALS.web.client_secret
+  , redirect_url: CREDENTIALS.web.redirect_uris[0]
+});
 
-  // Check if we have previously stored a token.
-  fs.readFile(TOKEN_PATH, function(err, token) {
-    if (err) {
-      getNewToken(oauth2Client, callback);
-    } else {
-      oauth2Client.credentials = JSON.parse(token);
-      callback(oauth2Client);
-    }
-  });
-}
+opn(oauth.generateAuthUrl({
+    access_type: "offline"
+  , scope: ["https://www.googleapis.com/auth/youtube.upload"]
+}));
 
-/**
- * Get and store new token after prompting for user authorization, and then
- * execute the given callback with the authorized OAuth2 client.
- *
- * @param {google.auth.OAuth2} oauth2Client The OAuth2 client to get token for.
- * @param {getEventsCallback} callback The callback to call with the authorized
- *     client.
- */
-function getNewToken(oauth2Client, callback) {
-  var authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES
-  });
-  console.log('Authorize this app by visiting this url: ', authUrl);
-  var rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-  rl.question('Enter the code from that page here: ', function(code) {
-    rl.close();
-    oauth2Client.getToken(code, function(err, token) {
-      if (err) {
-        console.log('Error while trying to retrieve access token', err);
-        return;
-      }
-      oauth2Client.credentials = token;
-      storeToken(token);
-      callback(oauth2Client);
+// Handle oauth2 callback
+server.addPage("/oauth2callback", lien => {
+    Logger.log("Trying to get the token using the following code: " + lien.query.code);
+    oauth.getToken(lien.query.code, (err, tokens) => {
+
+        if (err) {
+            lien.lien(err, 400);
+            return Logger.log(err);
+        }
+
+        Logger.log("Got the tokens.");
+
+        oauth.setCredentials(tokens);
+
+        lien.end("The video is being uploaded. Check out the logs in the terminal.");
+
+        var req = Youtube.videos.insert({
+            resource: {
+                // Video title and description
+                snippet: {
+                    title: "Testing YoutTube API NodeJS module"
+                  , description: "Test video upload via YouTube API"
+                }
+                // I don't want to spam my subscribers
+              , status: {
+                    privacyStatus: "private"
+                }
+            }
+            // This is for the callback function
+          , part: "snippet,status"
+
+            // Create the readable stream to upload the video
+          , media: {
+                body: fs.createReadStream("./uploads/upload-1587335519187.mp4")
+            }
+        }, (err, data) => {
+            console.log("Done.");
+            process.exit();
+        });
+
+        setInterval(function () {
+            Logger.log(`${prettyBytes(req.req.connection._bytesDispatched)} bytes uploaded.`);
+        }, 250);
     });
-  });
-}
-
-/**
- * Store token to disk be used in later program executions.
- *
- * @param {Object} token The token to store to disk.
- */
-function storeToken(token) {
-  try {
-    fs.mkdirSync(TOKEN_DIR);
-  } catch (err) {
-    if (err.code != 'EEXIST') {
-      throw err;
-    }
-  }
-  fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
-    if (err) throw err;
-    console.log('Token stored to ' + TOKEN_PATH);
-  });
-}
-
-/**
- * Lists the names and IDs of up to 10 files.
- *
- * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
- */
-function getChannel(auth) {
-  var service = google.youtube('v3');
-  service.channels.list({
-    auth: auth,
-    part: 'snippet,contentDetails,statistics',
-    forUsername: 'GoogleDevelopers'
-  }, function(err, response) {
-    if (err) {
-      console.log('The API returned an error: ' + err);
-      return;
-    }
-    var channels = response.data.items;
-    if (channels.length == 0) {
-      console.log('No channel found.');
-    } else {
-      console.log('This channel\'s ID is %s. Its title is \'%s\', and ' +
-                  'it has %s views.',
-                  channels[0].id,
-                  channels[0].snippet.title,
-                  channels[0].statistics.viewCount);
-    }
-  });
-}
+});

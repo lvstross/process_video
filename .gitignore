@@ -3,4 +3,6 @@ clips/*
 downloads/*
 uploads/*
 splitClipStation/*
+json/*
 *.DS_Store
+temp-audio.m4a

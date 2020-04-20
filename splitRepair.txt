@@ -1,3 +1,0 @@
-file ./splitClipStation/video_1-Scene-001.mp4
-file ./splitClipStation/video_1-Scene-002.mp4
-file ./splitClipStation/video_1-Scene-004.mp4

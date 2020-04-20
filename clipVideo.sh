@@ -1,5 +1,4 @@
 #!/bin/bash
-
 echo "inputVideo: $1"
 echo "outputVideo: $2"
 echo "startTime: $3"
