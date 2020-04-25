@@ -5,6 +5,7 @@
   "main": "process_video.js",
   "scripts": {
     "download": "node ./url_download.js",
+    "upload": "node ./uploadVideo.js",
     "genUpload": "python ./process_video.py",
     "splitVideo": "bash ./splitVideo.sh",
     "splitRepair": "node ./splitRepair.js"
