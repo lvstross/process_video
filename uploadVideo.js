@@ -69,7 +69,7 @@ server.addPage("/oauth2callback", lien => {
           tags: ['memes', 'challenge', 'funny', 'laugh'],
         },
         status: {
-          privacyStatus: "private"
+          privacyStatus: "public"
         }
       },
       part: "snippet,status",
